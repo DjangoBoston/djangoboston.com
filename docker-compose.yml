@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+    djangoapp:
+        # hostname: djbo_app
+        container_name: djbo_app
+        build: .
+        volumes:
+            # - ./djangoboston:/opt/services/djangoapp/src/djangoboston
+            - ./djangoboston:/opt/services/djangoapp/src
+            - static_volume:/opt/services/djangoapp/static
+            - media_volume:/opt/services/djangoapp/media
+#        ports:
+#            - 8000:8000
+        networks:
+            - nginx_network
+            - database1_network
+        depends_on:
+            - database1
+
+    nginx:
+        image: nginx:1.19.4
+        container_name: djbo_nginx
+        ports:
+            - 8000:80
+        volumes:
+            - ./config/nginx/conf.d:/etc/nginx/conf.d
+            - static_volume:/opt/services/djangoapp/static
+            - media_volume:/opt/services/djangoapp/media
+        depends_on:
+            - djangoapp
+        networks:  # <-- here
+            - nginx_network
+
+    database1:  # Needs to be the same name as in DATABASES setting
+        image: postgres:13.1
+        container_name: djbo_db1
+        env_file:
+            - config/db/database1_env
+        networks:
+            - database1_network
+        volumes:
+            - database1_volume:/var/lib/postgresql/data
+
+networks:
+    nginx_network:
+        driver: bridge
+    database1_network:
+        driver: bridge
+
+volumes:
+    database1_volume:
+    static_volume:
+    media_volume:
+
